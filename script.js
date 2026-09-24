@@ -101,7 +101,7 @@ function initBackgroundCanvas() {
 }
 
 /* =========================================================================
-   2. SÂN KHẤU HẠT: CHỮ "THOA" SẮC NÉT, ĐẬM ĐÀ & TỎA SÁNG LUNG LINH
+   2. SÂN KHẤU HẠT: CHỮ "THOA" SẮC NÉT, ĐẸP MẮT & KHÔNG BỊ MÉO
    ========================================================================= */
 function initHeartMorphCanvas() {
   const canvas = document.getElementById('heart-canvas');
@@ -109,25 +109,28 @@ function initHeartMorphCanvas() {
   if (!canvas || !wrapper) return;
   const ctx = canvas.getContext('2d');
 
-  let width = 360;
-  let height = 280;
+  let width = 600;
+  let height = 300;
 
+  // Lấy đúng kích thước thực tế hiển thị của container, không làm méo tỉ lệ
   function updateDimensions() {
     const rect = wrapper.getBoundingClientRect();
-    width = Math.max(rect.width || 0, window.innerWidth - 32, 300);
-    height = Math.max(rect.height || 0, 260);
-    canvas.width = width;
-    canvas.height = height;
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    if (w > 0 && h > 0) {
+      width = canvas.width = w;
+      height = canvas.height = h;
+    }
   }
   updateDimensions();
 
   const isMobile = window.innerWidth < 768;
-  const NUM_PARTICLES = isMobile ? 620 : 850;
+  const NUM_PARTICLES = isMobile ? 550 : 750;
   const particles = [];
   let thoaTargets = [];
-  let glowBoost = 1; // Hệ số phát sáng khi bấm nút
+  let glowBoost = 1;
 
-  // Tạo điểm chữ "Thoa" to rõ nét, đậm đà kết hợp trái tim mini
+  // Tạo điểm tọa độ cho chữ "Thoa" cân xứng, to rõ và không méo
   function generateTextPoints(count) {
     const offCanvas = document.createElement('canvas');
     offCanvas.width = width;
@@ -139,29 +142,29 @@ function initHeartMorphCanvas() {
       offCtx.textAlign = 'center';
       offCtx.textBaseline = 'middle';
 
-      // Chữ to hơn, rõ nét hơn
-      const fontSize = isMobile ? Math.min(74, width * 0.19) : Math.min(108, width * 0.22);
+      // Cỡ chữ tỷ lệ chuẩn với khung hình, dễ đọc và đẹp mắt
+      const fontSize = isMobile ? Math.min(68, width * 0.2) : Math.min(100, width * 0.22);
       offCtx.font = `bold ${fontSize}px ${useFont}`;
 
-      const textX = width / 2 - (isMobile ? 24 : 36);
-      const textY = height * 0.48;
+      const textX = width / 2 - (isMobile ? 18 : 28);
+      const textY = height / 2;
 
-      // Vẽ cả nét viền đậm và tô ruột để nét chữ Thoa dày dặn, không bị mảnh
-      offCtx.strokeStyle = '#ffffff';
-      offCtx.lineWidth = isMobile ? 5 : 7;
-      offCtx.strokeText('Thoa', textX, textY);
+      // Tô đậm nét chữ để tạo nhiều điểm hạt sắc nét
       offCtx.fillStyle = '#ffffff';
       offCtx.fillText('Thoa', textX, textY);
+      offCtx.strokeStyle = '#ffffff';
+      offCtx.lineWidth = isMobile ? 3 : 5;
+      offCtx.strokeText('Thoa', textX, textY);
 
-      // Trái tim nhỏ xinh xắn bên cạnh chữ Thoa
-      const hx = width / 2 + (isMobile ? 56 : 84);
-      const hy = height * 0.44;
-      const hr = isMobile ? 15 : 22;
+      // Trái tim nhỏ xinh xắn cạnh chữ Thoa
+      const hx = width / 2 + (isMobile ? 48 : 75);
+      const hy = height / 2 - (isMobile ? 10 : 16);
+      const hr = isMobile ? 12 : 18;
 
       offCtx.beginPath();
       offCtx.moveTo(hx, hy);
       offCtx.bezierCurveTo(hx, hy - hr, hx - hr * 1.3, hy - hr, hx - hr * 1.3, hy);
-      offCtx.bezierCurveTo(hx - hr * 1.3, hy + hr * 0.6, hx, hy + hr * 1.3, hx, hy + hr * 1.6);
+      offCtx.bezierCurveTo(hx - hr * 1.3, hy + hr * 0.6, hx, hy + hr * 1.3, hx, hy + hr * 1.5);
       offCtx.bezierCurveTo(hx, hy + hr * 1.3, hx + hr * 1.3, hy + hr * 0.6, hx + hr * 1.3, hy);
       offCtx.bezierCurveTo(hx + hr * 1.3, hy - hr, hx, hy - hr, hx, hy);
       offCtx.fill();
@@ -169,12 +172,12 @@ function initHeartMorphCanvas() {
       // Quét điểm sáng
       const imgData = offCtx.getImageData(0, 0, width, height);
       const valid = [];
-      const step = isMobile ? 2.5 : 3;
+      const step = isMobile ? 2 : 3;
 
       for (let y = 0; y < height; y += step) {
         for (let x = 0; x < width; x += step) {
-          const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
-          if (imgData.data[idx + 3] > 70) {
+          const idx = (y * width + x) * 4;
+          if (imgData.data[idx + 3] > 60) {
             valid.push({ x, y });
           }
         }
@@ -182,7 +185,7 @@ function initHeartMorphCanvas() {
       return valid;
     }
 
-    let validPixels = scanPixels('"Pacifico", "Dancing Script", cursive, sans-serif');
+    let validPixels = scanPixels('"Dancing Script", "Pacifico", cursive, sans-serif');
 
     if (validPixels.length < 100) {
       validPixels = scanPixels('"Segoe UI", Arial, sans-serif');
@@ -193,18 +196,17 @@ function initHeartMorphCanvas() {
       for (let i = 0; i < count; i++) {
         const p = validPixels[i % validPixels.length];
         points.push({
-          x: p.x + (Math.random() - 0.5) * 2.5,
-          y: p.y + (Math.random() - 0.5) * 2.5
+          x: p.x + (Math.random() - 0.5) * 2,
+          y: p.y + (Math.random() - 0.5) * 2
         });
       }
     } else {
-      // Fallback nếu có lỗi
       const cx = width / 2;
-      const cy = height * 0.48;
+      const cy = height / 2;
       for (let i = 0; i < count; i++) {
         points.push({
-          x: cx + (Math.random() - 0.5) * 160,
-          y: cy + (Math.random() - 0.5) * 70
+          x: cx + (Math.random() - 0.5) * 180,
+          y: cy + (Math.random() - 0.5) * 80
         });
       }
     }
@@ -217,8 +219,8 @@ function initHeartMorphCanvas() {
   }
   recomputeTargets();
 
-  // Bảng màu rực rỡ, dễ thương và sắc nét
-  const colors = ['#ff6b9d', '#ff758c', '#ff8e8e', '#ffb6c1', '#ff9ff3', '#feca57', '#ffffff', '#ffd1dc'];
+  // Bảng màu hồng phấn, vàng trăng & ánh sáng pastel lung linh
+  const colors = ['#ff6b9d', '#ff758c', '#ff8e8e', '#ffb6c1', '#ff9ff3', '#ffeaa7', '#ffffff'];
 
   for (let i = 0; i < NUM_PARTICLES; i++) {
     particles.push({
@@ -228,10 +230,10 @@ function initHeartMorphCanvas() {
       vy: (Math.random() - 0.5) * 2,
       targetX: thoaTargets[i].x,
       targetY: thoaTargets[i].y,
-      size: Math.random() * 2.4 + 1.3,
+      size: Math.random() * 2 + 1.2,
       color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: Math.random() * 0.35 + 0.65,
-      twinkleSpeed: Math.random() * 0.05 + 0.02
+      alpha: Math.random() * 0.4 + 0.6,
+      twinkle: Math.random() * Math.PI * 2
     });
   }
 
@@ -258,7 +260,7 @@ function initHeartMorphCanvas() {
   });
 
   // Tương tác chuột & chạm cảm ứng
-  let mouse = { x: -1000, y: -1000, radius: 60 };
+  let mouse = { x: -1000, y: -1000, radius: 55 };
 
   function handlePointerMove(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
@@ -282,7 +284,7 @@ function initHeartMorphCanvas() {
   if (glowBtn) {
     glowBtn.addEventListener('click', () => {
       glowBoost = 2.2;
-      createHeartBurst(window.innerWidth / 2, window.innerHeight * 0.35, 12);
+      createHeartBurst(window.innerWidth / 2, window.innerHeight * 0.35, 14);
       setTimeout(() => {
         glowBoost = 1;
       }, 2500);
@@ -294,8 +296,8 @@ function initHeartMorphCanvas() {
   if (scatterBtn) {
     scatterBtn.addEventListener('click', () => {
       particles.forEach(p => {
-        p.vx += (Math.random() - 0.5) * 22;
-        p.vy += (Math.random() - 0.5) * 22;
+        p.vx += (Math.random() - 0.5) * 20;
+        p.vy += (Math.random() - 0.5) * 20;
       });
       createHeartBurst(window.innerWidth / 2, window.innerHeight * 0.35, 16);
     });
@@ -306,42 +308,15 @@ function initHeartMorphCanvas() {
   function render() {
     ctx.clearRect(0, 0, width, height);
 
-    waveTimer += 0.04;
-    // Hiệu ứng thở nhẹ nhàng cho chữ Thoa
-    const breathe = 1 + Math.sin(waveTimer * 1.5) * 0.025;
+    waveTimer += 0.045;
+    // Hiệu ứng phập phồng nhẹ nhàng đồng bộ cho chữ Thoa
+    const breathe = 1 + Math.sin(waveTimer * 1.8) * 0.025;
 
     const cx = width / 2;
-    const cy = height * 0.48;
+    const cy = height / 2;
 
-    // 1. VẼ LỚP NỀN PHÁT SÁNG NEON MỜ CHO CHỮ THOA (Giúp chữ Thoa cực rõ nét & nổi bật)
-    ctx.save();
-    const fontSize = isMobile ? Math.min(74, width * 0.19) : Math.min(108, width * 0.22);
-    ctx.font = `bold ${fontSize}px "Pacifico", "Dancing Script", "Segoe UI", Arial, cursive`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowBlur = 18 * glowBoost;
-    ctx.shadowColor = '#ff6b9d';
-    ctx.fillStyle = `rgba(255, 107, 157, ${0.22 * glowBoost})`;
-
-    const textX = width / 2 - (isMobile ? 24 : 36);
-    const textY = height * 0.48;
-    ctx.fillText('Thoa', textX, textY);
-
-    // Vẽ nền mờ cho trái tim nhỏ
-    const hx = width / 2 + (isMobile ? 56 : 84);
-    const hy = height * 0.44;
-    const hr = isMobile ? 15 : 22;
-    ctx.beginPath();
-    ctx.moveTo(hx, hy);
-    ctx.bezierCurveTo(hx, hy - hr, hx - hr * 1.3, hy - hr, hx - hr * 1.3, hy);
-    ctx.bezierCurveTo(hx - hr * 1.3, hy + hr * 0.6, hx, hy + hr * 1.3, hx, hy + hr * 1.6);
-    ctx.bezierCurveTo(hx, hy + hr * 1.3, hx + hr * 1.3, hy + hr * 0.6, hx + hr * 1.3, hy);
-    ctx.bezierCurveTo(hx + hr * 1.3, hy - hr, hx, hy - hr, hx, hy);
-    ctx.fill();
-    ctx.restore();
-
-    // 2. VẼ VÀ CẬP NHẬT TỪNG HẠT LẤP LÁNH TẠO THÀNH CHỮ THOA
-    particles.forEach((p, idx) => {
+    // VẼ TỪNG HẠT LẤP LÁNH TẠO NÊN CHỮ THOA (Không vẽ lớp chữ tĩnh để tránh bóng ma)
+    particles.forEach((p) => {
       const dxOrigin = p.targetX - cx;
       const dyOrigin = p.targetY - cy;
       const pulsedTargetX = cx + dxOrigin * breathe;
@@ -349,15 +324,15 @@ function initHeartMorphCanvas() {
 
       const dx = pulsedTargetX - p.x;
       const dy = pulsedTargetY - p.y;
-      p.vx = p.vx * 0.86 + dx * 0.05;
-      p.vy = p.vy * 0.86 + dy * 0.05;
+      p.vx = p.vx * 0.86 + dx * 0.045;
+      p.vy = p.vy * 0.86 + dy * 0.045;
 
-      // Phản hồi từ con trỏ chuột / chạm tay
+      // Phản hồi khi di chuột / chạm tay
       const distMouseX = p.x - mouse.x;
       const distMouseY = p.y - mouse.y;
       const distMouse = Math.sqrt(distMouseX * distMouseX + distMouseY * distMouseY);
       if (distMouse < mouse.radius) {
-        const force = (1 - distMouse / mouse.radius) * 7.5;
+        const force = (1 - distMouse / mouse.radius) * 7;
         const angle = Math.atan2(distMouseY, distMouseX);
         p.vx += Math.cos(angle) * force;
         p.vy += Math.sin(angle) * force;
@@ -366,14 +341,18 @@ function initHeartMorphCanvas() {
       p.x += p.vx;
       p.y += p.vy;
 
-      // Vẽ hạt sáng
+      // Hiệu ứng hạt nhấp nháy lấp lánh (Twinkle)
+      p.twinkle += 0.06;
+      const currentAlpha = Math.min(1, (p.alpha + Math.sin(p.twinkle) * 0.2) * glowBoost);
+
+      // Vẽ hạt phát sáng
       ctx.save();
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * (glowBoost > 1 ? 1.3 : 1), 0, Math.PI * 2);
       ctx.fillStyle = p.color;
-      ctx.shadowBlur = (glowBoost > 1 ? 16 : 9);
+      ctx.shadowBlur = glowBoost > 1 ? 15 : 8;
       ctx.shadowColor = p.color;
-      ctx.globalAlpha = Math.min(1, p.alpha * glowBoost);
+      ctx.globalAlpha = Math.max(0.2, currentAlpha);
       ctx.fill();
       ctx.restore();
     });
