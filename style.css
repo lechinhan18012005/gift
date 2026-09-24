@@ -941,124 +941,148 @@ body {
    5. TỐI ƯU RESPONSIVE CHO ĐIỆN THOẠI (MOBILE & TABLET)
    ========================================================================= */
 @media (max-width: 768px) {
+  /* Ẩn hoàn toàn lồng đèn cố định trên mobile để tránh che khuất chữ tiêu đề */
+  .lantern-wrapper {
+    display: none !important;
+  }
+
+  /* Mặt trăng thu nhỏ tinh tế ở góc trên bên trái, mờ nhẹ không đè chữ */
   .moon-container {
-    top: 12px;
-    left: 12px;
+    top: 8px;
+    left: 8px;
+    opacity: 0.55;
+    z-index: 0;
   }
   .full-moon {
-    width: 58px;
-    height: 58px;
+    width: 38px;
+    height: 38px;
+    box-shadow: 0 0 15px rgba(255, 234, 167, 0.5);
   }
   .rabbit-silhouette {
-    font-size: 1rem;
-    bottom: 4px;
-    right: 6px;
+    font-size: 0.85rem;
+    bottom: 2px;
+    right: 4px;
   }
 
-  /* Thu gọn lồng đèn trên mobile để không chắn màn hình */
-  .lantern-left {
-    left: 78px;
-  }
-  .lantern-right {
-    display: none; /* Giữ 1 đèn lồng bên trái cho gọn gàng */
-  }
-  .lantern-body {
-    width: 38px;
-    height: 48px;
-  }
-  .lantern-text {
-    font-size: 0.95rem;
-  }
-
+  /* Nút bật nhạc nhỏ gọn ở góc trên bên phải */
   .top-controls {
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
   }
   .control-btn {
-    padding: 8px 12px;
-    font-size: 0.82rem;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    border-radius: 20px;
   }
 
+  /* Vùng nội dung chính có khoảng cách an toàn rộng rãi phía trên */
   .main-container {
-    padding: 65px 14px 60px 14px;
-    gap: 26px;
+    padding: 45px 12px 60px 12px;
+    gap: 22px;
   }
 
+  .header-section {
+    padding-top: 15px;
+    margin-top: 0;
+  }
+
+  .badge {
+    font-size: 0.78rem;
+    padding: 4px 14px;
+    margin-bottom: 8px;
+  }
+
+  /* Tiêu đề vừa vặn màn hình điện thoại, không bị xô lệch hay rớt chữ */
   .main-title {
-    font-size: 1.95rem;
+    font-size: clamp(1.4rem, 5.5vw, 1.85rem);
+    line-height: 1.35;
+    margin-bottom: 6px;
+    text-shadow: 0 0 12px rgba(255, 107, 157, 0.6);
   }
   .sub-title {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
   }
 
-  /* Sân khấu hạt trái tim trên mobile */
+  /* Sân khấu hạt trái tim & chữ Thoa trên mobile */
   .heart-stage-section {
     padding: 14px 10px 16px 10px;
-    border-radius: 22px;
+    border-radius: 20px;
   }
   .heart-canvas-wrapper {
     height: 250px;
   }
   .stage-btn, .stage-btn-secondary {
-    padding: 8px 14px;
-    font-size: 0.85rem;
+    padding: 7px 13px;
+    font-size: 0.82rem;
+  }
+  .stage-hint {
+    font-size: 0.75rem;
   }
 
   /* Khung ảnh của Thoa trên mobile */
   .card-3d {
     width: 280px;
-    padding: 14px 14px 16px 14px;
+    padding: 13px 13px 15px 13px;
+    border-radius: 22px;
   }
   .photo-frame {
     height: 320px;
+    border-radius: 15px;
   }
   .ring-1, .ring-2, .ring-3 {
     width: 270px;
     height: 380px;
   }
+  .photo-caption .quote {
+    font-size: 1.15rem;
+  }
+  .photo-caption .click-hint {
+    font-size: 0.72rem;
+  }
 
   /* Thiệp lời chúc trên mobile */
   .letter-card {
-    padding: 24px 16px;
-    border-radius: 22px;
+    padding: 22px 14px;
+    border-radius: 20px;
   }
   .letter-stamp {
-    font-size: 1.7rem;
-    top: 14px;
-    right: 14px;
+    font-size: 1.6rem;
+    top: 12px;
+    right: 12px;
   }
   .letter-title {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
   }
   .letter-body {
-    padding: 16px 14px;
-    min-height: 160px;
+    padding: 15px 12px;
+    min-height: 150px;
   }
   .typewriter-content {
-    font-size: 0.94rem;
-    line-height: 1.7;
+    font-size: 0.92rem;
+    line-height: 1.65;
     text-align: left;
   }
   .letter-footer .sign {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
   .action-btn, .action-btn-outline {
-    padding: 10px 18px;
-    font-size: 0.88rem;
+    padding: 9px 16px;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 380px) {
   .card-3d {
-    width: 260px;
+    width: 255px;
   }
   .photo-frame {
-    height: 295px;
+    height: 290px;
   }
   .heart-canvas-wrapper {
-    height: 220px;
+    height: 225px;
   }
   .main-title {
-    font-size: 1.7rem;
+    font-size: 1.55rem;
   }
 }

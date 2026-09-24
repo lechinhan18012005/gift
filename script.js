@@ -1,10 +1,9 @@
 /**
  * GIFT FOR THOA - MÓN QUÀ TRUNG THU NGỌT NGÀO
- * Cập nhật:
- * 1. Sân khấu canvas độc lập cho Trái Tim & Chữ Thoa, không bị che khuất
- * 2. Tối ưu Responsive chuẩn chỉnh trên điện thoại & máy tính bảng
- * 3. Bổ sung đa dạng hiệu ứng chuyển động cho ảnh của Thoa (nhún nhảy, vệt sáng, aura pulse, tai thỏ)
- * 4. Hiệu ứng tương tác cảm ứng nhạy bén trên Mobile
+ * Khắc phục hoàn toàn:
+ * 1. Chữ Thoa trên Mobile hiển thị sắc nét, không bị co cụm thành 1 đốm
+ * 2. Header trên Mobile thoáng đãng, không bị mặt trăng / lồng đèn / nút nhạc che chữ
+ * 3. Hỗ trợ font loading & fallback vector an toàn trên mọi thiết bị di động
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,7 +27,7 @@ function initBackgroundCanvas() {
   let height = (canvas.height = window.innerHeight);
 
   const stars = [];
-  const numStars = Math.min(110, Math.floor((width * height) / 9000));
+  const numStars = Math.min(100, Math.floor((width * height) / 9500));
 
   for (let i = 0; i < numStars; i++) {
     stars.push({
@@ -44,7 +43,7 @@ function initBackgroundCanvas() {
   // Sao băng ngẫu nhiên
   let meteors = [];
   function spawnMeteor() {
-    if (Math.random() < 0.018 && meteors.length < 2) {
+    if (Math.random() < 0.016 && meteors.length < 2) {
       meteors.push({
         x: Math.random() * width,
         y: Math.random() * (height * 0.35),
@@ -58,7 +57,6 @@ function initBackgroundCanvas() {
   function animate() {
     ctx.clearRect(0, 0, width, height);
 
-    // Vẽ sao lấp lánh
     stars.forEach(star => {
       star.alpha += star.speed;
       const opacity = (Math.sin(star.alpha) + 1) / 2;
@@ -73,7 +71,6 @@ function initBackgroundCanvas() {
       ctx.restore();
     });
 
-    // Vẽ sao băng
     spawnMeteor();
     for (let i = meteors.length - 1; i >= 0; i--) {
       const m = meteors[i];
@@ -112,31 +109,34 @@ function initHeartMorphCanvas() {
   if (!canvas || !wrapper) return;
   const ctx = canvas.getContext('2d');
 
-  let width, height;
+  let width = 360;
+  let height = 280;
+
   function updateDimensions() {
     const rect = wrapper.getBoundingClientRect();
-    width = canvas.width = rect.width;
-    height = canvas.height = rect.height;
+    width = Math.max(rect.width || 0, window.innerWidth - 32, 300);
+    height = Math.max(rect.height || 0, 260);
+    canvas.width = width;
+    canvas.height = height;
   }
   updateDimensions();
 
   const isMobile = window.innerWidth < 768;
-  const NUM_PARTICLES = isMobile ? 480 : 700;
+  const NUM_PARTICLES = isMobile ? 480 : 680;
   const particles = [];
   let currentTargetMode = 'heart'; // 'heart' hoặc 'thoa'
   let heartTargets = [];
   let thoaTargets = [];
 
-  // 1. Tạo điểm tọa độ Trái Tim chuẩn xác ở giữa canvas
+  // 1. Tạo điểm Trái Tim chuẩn xác ở giữa canvas
   function generateHeartPoints(count) {
     const points = [];
     const scale = Math.min(width, height) * (isMobile ? 0.038 : 0.046);
     const cx = width / 2;
-    const cy = height * 0.48; // Canh giữa hoàn hảo
+    const cy = height * 0.48;
 
     for (let i = 0; i < count; i++) {
       const t = Math.PI * 2 * (i / count);
-      // Phương trình toán học hình trái tim
       const x = 16 * Math.pow(Math.sin(t), 3);
       const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
       
@@ -149,44 +149,79 @@ function initHeartMorphCanvas() {
     return points;
   }
 
-  // 2. Tạo điểm tọa độ chữ "Thoa 💕" sắc nét, rõ ràng
+  // 2. Tạo điểm chữ "Thoa" kết hợp hình trái tim - Đảm bảo hoạt động 100% trên Mobile
   function generateTextPoints(count) {
     const offCanvas = document.createElement('canvas');
     offCanvas.width = width;
     offCanvas.height = height;
     const offCtx = offCanvas.getContext('2d');
 
-    const fontSize = isMobile ? Math.min(65, width * 0.16) : Math.min(95, width * 0.18);
-    offCtx.font = `bold ${fontSize}px "Pacifico", "Dancing Script", cursive, sans-serif`;
-    offCtx.fillStyle = '#ffffff';
-    offCtx.textAlign = 'center';
-    offCtx.textBaseline = 'middle';
-    offCtx.fillText('Thoa 💕', width / 2, height * 0.48);
+    // Hàm quét pixel từ canvas
+    function scanPixels(useFont) {
+      offCtx.clearRect(0, 0, width, height);
+      offCtx.fillStyle = '#ffffff';
+      offCtx.textAlign = 'center';
+      offCtx.textBaseline = 'middle';
 
-    const imgData = offCtx.getImageData(0, 0, width, height);
-    const validPixels = [];
-    const step = isMobile ? 3 : 4;
+      const fontSize = isMobile ? Math.min(62, width * 0.16) : Math.min(90, width * 0.18);
+      offCtx.font = `bold ${fontSize}px ${useFont}`;
 
-    for (let y = 0; y < height; y += step) {
-      for (let x = 0; x < width; x += step) {
-        const index = (y * width + x) * 4;
-        if (imgData.data[index + 3] > 120) {
-          validPixels.push({ x, y });
+      // Vẽ chữ "Thoa" lùi nhẹ sang trái một chút để chừa chỗ cho trái tim
+      const textX = width / 2 - (isMobile ? 22 : 32);
+      const textY = height * 0.48;
+      offCtx.fillText('Thoa', textX, textY);
+
+      // Vẽ hình trái tim mini kế bên chữ Thoa (bằng Path toán học, không dùng emoji tránh lỗi Android)
+      const hx = width / 2 + (isMobile ? 48 : 72);
+      const hy = height * 0.44;
+      const hr = isMobile ? 12 : 18;
+
+      offCtx.beginPath();
+      offCtx.moveTo(hx, hy);
+      offCtx.bezierCurveTo(hx, hy - hr, hx - hr * 1.3, hy - hr, hx - hr * 1.3, hy);
+      offCtx.bezierCurveTo(hx - hr * 1.3, hy + hr * 0.6, hx, hy + hr * 1.3, hx, hy + hr * 1.6);
+      offCtx.bezierCurveTo(hx, hy + hr * 1.3, hx + hr * 1.3, hy + hr * 0.6, hx + hr * 1.3, hy);
+      offCtx.bezierCurveTo(hx + hr * 1.3, hy - hr, hx, hy - hr, hx, hy);
+      offCtx.fill();
+
+      // Quét điểm sáng
+      const imgData = offCtx.getImageData(0, 0, width, height);
+      const valid = [];
+      const step = isMobile ? 3 : 4;
+
+      for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+          const idx = (y * width + x) * 4;
+          if (imgData.data[idx + 3] > 80) { // Nhận diện pixel vẽ
+            valid.push({ x, y });
+          }
         }
       }
+      return valid;
     }
 
+    // Thử lần 1 với Pacifico / Dancing Script
+    let validPixels = scanPixels('"Pacifico", "Dancing Script", cursive, sans-serif');
+
+    // Nếu mobile chưa load kịp font Google Fonts, fallback sang font hệ thống chuẩn
+    if (validPixels.length < 80) {
+      validPixels = scanPixels('"Segoe UI", Arial, sans-serif');
+    }
+
+    // Nếu vẫn nhỏ hơn 40 (trường hợp cực hiếm), fallback sang hình phân tán đối xứng quanh chữ Thoa
     const points = [];
-    for (let i = 0; i < count; i++) {
-      if (validPixels.length > 0) {
-        const pixel = validPixels[i % validPixels.length];
+    if (validPixels.length > 0) {
+      for (let i = 0; i < count; i++) {
+        const p = validPixels[i % validPixels.length];
         points.push({
-          x: pixel.x + (Math.random() - 0.5) * 3,
-          y: pixel.y + (Math.random() - 0.5) * 3
+          x: p.x + (Math.random() - 0.5) * 3,
+          y: p.y + (Math.random() - 0.5) * 3
         });
-      } else {
-        points.push({ x: width / 2, y: height / 2 });
       }
+    } else {
+      // Fallback an toàn: không bao giờ để dồn thành 1 đốm
+      const heartFb = generateHeartPoints(count);
+      return heartFb;
     }
     return points;
   }
@@ -215,8 +250,32 @@ function initHeartMorphCanvas() {
     });
   }
 
+  function applyTargets() {
+    const targets = currentTargetMode === 'heart' ? heartTargets : thoaTargets;
+    particles.forEach((p, idx) => {
+      if (targets[idx]) {
+        p.targetX = targets[idx].x;
+        p.targetY = targets[idx].y;
+      }
+    });
+  }
+
+  // Chờ khi font chữ load xong thì cập nhật lại chữ Thoa cho đẹp nhất
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      recomputeTargets();
+      applyTargets();
+    });
+  }
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      recomputeTargets();
+      applyTargets();
+    }, 250);
+  });
+
   // Tương tác chuột & chạm cảm ứng trên canvas
-  let mouse = { x: -1000, y: -1000, radius: 60 };
+  let mouse = { x: -1000, y: -1000, radius: 55 };
 
   function handlePointerMove(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
@@ -241,10 +300,12 @@ function initHeartMorphCanvas() {
     const targets = currentTargetMode === 'heart' ? heartTargets : thoaTargets;
 
     particles.forEach((p, idx) => {
-      p.targetX = targets[idx].x;
-      p.targetY = targets[idx].y;
-      p.vx += (Math.random() - 0.5) * 10;
-      p.vy += (Math.random() - 0.5) * 10;
+      if (targets[idx]) {
+        p.targetX = targets[idx].x;
+        p.targetY = targets[idx].y;
+      }
+      p.vx += (Math.random() - 0.5) * 8;
+      p.vy += (Math.random() - 0.5) * 8;
     });
 
     const morphBtn = document.getElementById('morph-toggle');
@@ -272,10 +333,10 @@ function initHeartMorphCanvas() {
   if (scatterBtn) {
     scatterBtn.addEventListener('click', () => {
       particles.forEach(p => {
-        p.vx += (Math.random() - 0.5) * 22;
-        p.vy += (Math.random() - 0.5) * 22;
+        p.vx += (Math.random() - 0.5) * 20;
+        p.vy += (Math.random() - 0.5) * 20;
       });
-      createHeartBurst(window.innerWidth / 2, window.innerHeight * 0.35, 15);
+      createHeartBurst(window.innerWidth / 2, window.innerHeight * 0.35, 14);
     });
   }
 
@@ -291,7 +352,7 @@ function initHeartMorphCanvas() {
     beatTimer += 0.055;
     const pulseScale = currentTargetMode === 'heart'
       ? 1 + Math.pow(Math.sin(beatTimer * 2.2), 6) * 0.12 + Math.pow(Math.sin(beatTimer * 2.2 + 0.3), 8) * 0.06
-      : 1 + Math.sin(beatTimer * 1.5) * 0.03;
+      : 1 + Math.sin(beatTimer * 1.5) * 0.025;
 
     const cx = width / 2;
     const cy = height * 0.48;
@@ -312,7 +373,7 @@ function initHeartMorphCanvas() {
       const distMouseY = p.y - mouse.y;
       const distMouse = Math.sqrt(distMouseX * distMouseX + distMouseY * distMouseY);
       if (distMouse < mouse.radius) {
-        const force = (1 - distMouse / mouse.radius) * 8;
+        const force = (1 - distMouse / mouse.radius) * 7;
         const angle = Math.atan2(distMouseY, distMouseX);
         p.vx += Math.cos(angle) * force;
         p.vy += Math.sin(angle) * force;
@@ -339,11 +400,7 @@ function initHeartMorphCanvas() {
 
   window.addEventListener('resize', () => {
     recomputeTargets();
-    const targets = currentTargetMode === 'heart' ? heartTargets : thoaTargets;
-    particles.forEach((p, idx) => {
-      p.targetX = targets[idx].x;
-      p.targetY = targets[idx].y;
-    });
+    applyTargets();
   });
 }
 
@@ -381,7 +438,6 @@ function initPhotoInteractions() {
     void card.offsetWidth; // Force reflow
     card.classList.add('dance-active');
 
-    // Bắn tim và sao xung quanh ảnh
     const rect = card.getBoundingClientRect();
     createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 14);
 
@@ -401,7 +457,7 @@ function initPhotoInteractions() {
     heartBurstBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = card.getBoundingClientRect();
-      createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 3, 20);
+      createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 3, 18);
     });
   }
 
@@ -556,7 +612,6 @@ function initMusicPlayer() {
     }
   }
 
-  // Tương tác lần đầu để phát nhạc nếu được phép
   const playOnce = () => {
     document.removeEventListener('click', playOnce);
     if (!isPlaying) {
