@@ -1,17 +1,16 @@
 /**
  * GIFT FOR THOA - MÓN QUÀ TRUNG THU NGỌT NGÀO
- * Chức năng:
- * 1. Particle System Morphing: Trái tim hồng chuyển động nhịp đập & biến hóa thành chữ "Thoa 💕"
- * 2. Canvas Starfield & Moon Dust nền trời đêm
- * 3. Hiệu ứng chuyển động 3D Card cho hình ảnh của Thoa
- * 4. Hiệu ứng Typewriter lời chúc Trung Thu
- * 5. Bắn pháo hoa tim & Nhạc nền lãng mạn
+ * Cập nhật:
+ * 1. Sân khấu canvas độc lập cho Trái Tim & Chữ Thoa, không bị che khuất
+ * 2. Tối ưu Responsive chuẩn chỉnh trên điện thoại & máy tính bảng
+ * 3. Bổ sung đa dạng hiệu ứng chuyển động cho ảnh của Thoa (nhún nhảy, vệt sáng, aura pulse, tai thỏ)
+ * 4. Hiệu ứng tương tác cảm ứng nhạy bén trên Mobile
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   initBackgroundCanvas();
   initHeartMorphCanvas();
-  initPhoto3DInteraction();
+  initPhotoInteractions();
   initTypewriter();
   initMusicPlayer();
   initInteractiveBursts();
@@ -29,7 +28,7 @@ function initBackgroundCanvas() {
   let height = (canvas.height = window.innerHeight);
 
   const stars = [];
-  const numStars = Math.min(130, Math.floor((width * height) / 8000));
+  const numStars = Math.min(110, Math.floor((width * height) / 9000));
 
   for (let i = 0; i < numStars; i++) {
     stars.push({
@@ -45,12 +44,12 @@ function initBackgroundCanvas() {
   // Sao băng ngẫu nhiên
   let meteors = [];
   function spawnMeteor() {
-    if (Math.random() < 0.02 && meteors.length < 2) {
+    if (Math.random() < 0.018 && meteors.length < 2) {
       meteors.push({
         x: Math.random() * width,
-        y: Math.random() * (height * 0.4),
-        len: Math.random() * 80 + 40,
-        speed: Math.random() * 6 + 6,
+        y: Math.random() * (height * 0.35),
+        len: Math.random() * 70 + 40,
+        speed: Math.random() * 5 + 6,
         alpha: 1
       });
     }
@@ -105,109 +104,102 @@ function initBackgroundCanvas() {
 }
 
 /* =========================================================================
-   2. HẠT TRÁI TIM HỒNG CHUYỂN ĐỘNG & BIẾN HÓA RA CHỮ "THOA"
+   2. SÂN KHẤU HẠT: TRÁI TIM HỒNG CHUYỂN ĐỘNG & BIẾN THÀNH CHỮ "THOA"
    ========================================================================= */
-let toggleParticleShapeGlobal = null;
-
 function initHeartMorphCanvas() {
   const canvas = document.getElementById('heart-canvas');
-  if (!canvas) return;
+  const wrapper = document.getElementById('heartCanvasWrapper');
+  if (!canvas || !wrapper) return;
   const ctx = canvas.getContext('2d');
 
-  let width = (canvas.width = window.innerWidth);
-  let height = (canvas.height = window.innerHeight);
+  let width, height;
+  function updateDimensions() {
+    const rect = wrapper.getBoundingClientRect();
+    width = canvas.width = rect.width;
+    height = canvas.height = rect.height;
+  }
+  updateDimensions();
 
-  const NUM_PARTICLES = window.innerWidth < 768 ? 500 : 750;
+  const isMobile = window.innerWidth < 768;
+  const NUM_PARTICLES = isMobile ? 480 : 700;
   const particles = [];
   let currentTargetMode = 'heart'; // 'heart' hoặc 'thoa'
   let heartTargets = [];
   let thoaTargets = [];
 
-  // Tạo điểm tọa độ Trái Tim
+  // 1. Tạo điểm tọa độ Trái Tim chuẩn xác ở giữa canvas
   function generateHeartPoints(count) {
     const points = [];
-    const scale = Math.min(width, height) * 0.018; // Kích thước trái tim
+    const scale = Math.min(width, height) * (isMobile ? 0.038 : 0.046);
     const cx = width / 2;
-    const cy = height * 0.38; // Đặt vị trí hài hòa
+    const cy = height * 0.48; // Canh giữa hoàn hảo
 
     for (let i = 0; i < count; i++) {
-      // Công thức trái tim
       const t = Math.PI * 2 * (i / count);
-      // Phương trình tham số hình trái tim
+      // Phương trình toán học hình trái tim
       const x = 16 * Math.pow(Math.sin(t), 3);
       const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
       
-      // Thêm một chút độ dày bên trong lòng trái tim
       const fillFactor = Math.sqrt(Math.random()) * 0.95 + 0.05;
       points.push({
         x: cx + x * scale * fillFactor,
-        y: cy + y * scale * fillFactor,
-        originX: x * scale,
-        originY: y * scale,
-        fillFactor: fillFactor
+        y: cy + y * scale * fillFactor
       });
     }
     return points;
   }
 
-  // Tạo điểm tọa độ chữ "Thoa 💕"
+  // 2. Tạo điểm tọa độ chữ "Thoa 💕" sắc nét, rõ ràng
   function generateTextPoints(count) {
     const offCanvas = document.createElement('canvas');
-    offCanvas.width = 800;
-    offCanvas.height = 300;
+    offCanvas.width = width;
+    offCanvas.height = height;
     const offCtx = offCanvas.getContext('2d');
 
-    const fontSize = width < 768 ? 95 : 130;
-    offCtx.font = `bold ${fontSize}px "Dancing Script", "Pacifico", cursive, sans-serif`;
+    const fontSize = isMobile ? Math.min(65, width * 0.16) : Math.min(95, width * 0.18);
+    offCtx.font = `bold ${fontSize}px "Pacifico", "Dancing Script", cursive, sans-serif`;
     offCtx.fillStyle = '#ffffff';
     offCtx.textAlign = 'center';
     offCtx.textBaseline = 'middle';
-    offCtx.fillText('Thoa 💕', offCanvas.width / 2, offCanvas.height / 2);
+    offCtx.fillText('Thoa 💕', width / 2, height * 0.48);
 
-    const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+    const imgData = offCtx.getImageData(0, 0, width, height);
     const validPixels = [];
-    const step = 4; // Lấy mẫu pixel
+    const step = isMobile ? 3 : 4;
 
-    for (let y = 0; y < offCanvas.height; y += step) {
-      for (let x = 0; x < offCanvas.width; x += step) {
-        const index = (y * offCanvas.width + x) * 4;
-        if (imgData.data[index + 3] > 128) {
-          validPixels.push({
-            x: x - offCanvas.width / 2,
-            y: y - offCanvas.height / 2
-          });
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        const index = (y * width + x) * 4;
+        if (imgData.data[index + 3] > 120) {
+          validPixels.push({ x, y });
         }
       }
     }
 
     const points = [];
-    const cx = width / 2;
-    const cy = height * 0.38;
-
     for (let i = 0; i < count; i++) {
       if (validPixels.length > 0) {
         const pixel = validPixels[i % validPixels.length];
         points.push({
-          x: cx + pixel.x + (Math.random() - 0.5) * 4,
-          y: cy + pixel.y + (Math.random() - 0.5) * 4
+          x: pixel.x + (Math.random() - 0.5) * 3,
+          y: pixel.y + (Math.random() - 0.5) * 3
         });
       } else {
-        points.push({ x: cx, y: cy });
+        points.push({ x: width / 2, y: height / 2 });
       }
     }
     return points;
   }
 
   function recomputeTargets() {
+    updateDimensions();
     heartTargets = generateHeartPoints(NUM_PARTICLES);
     thoaTargets = generateTextPoints(NUM_PARTICLES);
   }
   recomputeTargets();
 
   // Khởi tạo các hạt
-  const colors = [
-    '#ff6b9d', '#ff758c', '#ff8e8e', '#ffb6c1', '#ff9ff3', '#feca57', '#ffffff'
-  ];
+  const colors = ['#ff6b9d', '#ff758c', '#ff8e8e', '#ffb6c1', '#ff9ff3', '#feca57', '#ffffff'];
 
   for (let i = 0; i < NUM_PARTICLES; i++) {
     particles.push({
@@ -217,96 +209,110 @@ function initHeartMorphCanvas() {
       vy: (Math.random() - 0.5) * 2,
       targetX: heartTargets[i].x,
       targetY: heartTargets[i].y,
-      size: Math.random() * 2.6 + 1.2,
+      size: Math.random() * 2.2 + 1.2,
       color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: Math.random() * 0.5 + 0.5,
-      pulsePhase: Math.random() * Math.PI * 2,
-      index: i
+      alpha: Math.random() * 0.4 + 0.6
     });
   }
 
-  // Tương tác chuột
-  let mouse = { x: -1000, y: -1000, radius: 80 };
-  window.addEventListener('mousemove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  });
-  window.addEventListener('touchmove', (e) => {
+  // Tương tác chuột & chạm cảm ứng trên canvas
+  let mouse = { x: -1000, y: -1000, radius: 60 };
+
+  function handlePointerMove(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = clientX - rect.left;
+    mouse.y = clientY - rect.top;
+  }
+
+  canvas.addEventListener('mousemove', (e) => handlePointerMove(e.clientX, e.clientY));
+  canvas.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; });
+
+  canvas.addEventListener('touchmove', (e) => {
     if (e.touches.length > 0) {
-      mouse.x = e.touches[0].clientX;
-      mouse.y = e.touches[0].clientY;
+      handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
     }
   }, { passive: true });
-  window.addEventListener('touchend', () => {
-    mouse.x = -1000;
-    mouse.y = -1000;
-  });
 
-  // Chuyển dáng giữa Trái Tim và Chữ Thoa
+  canvas.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
+
+  // Đổi dáng hạt Trái Tim <-> Chữ Thoa
   function toggleParticleShape() {
     currentTargetMode = currentTargetMode === 'heart' ? 'thoa' : 'heart';
     const targets = currentTargetMode === 'heart' ? heartTargets : thoaTargets;
-    
-    // Thêm hiệu ứng bùng nhẹ khi đổi hình
+
     particles.forEach((p, idx) => {
       p.targetX = targets[idx].x;
       p.targetY = targets[idx].y;
-      p.vx += (Math.random() - 0.5) * 8;
-      p.vy += (Math.random() - 0.5) * 8;
+      p.vx += (Math.random() - 0.5) * 10;
+      p.vy += (Math.random() - 0.5) * 10;
     });
 
     const morphBtn = document.getElementById('morph-toggle');
     if (morphBtn) {
-      const textSpan = morphBtn.querySelector('.btn-text');
-      if (textSpan) {
-        textSpan.innerText = currentTargetMode === 'heart' ? 'Xem chữ Thoa' : 'Xem Trái Tim';
+      const label = morphBtn.querySelector('.btn-label');
+      const icon = morphBtn.querySelector('.btn-icon');
+      if (currentTargetMode === 'thoa') {
+        label.innerText = 'Đang hiện: Chữ Thoa';
+        icon.innerText = '✨';
+      } else {
+        label.innerText = 'Đang hiện: Trái Tim';
+        icon.innerText = '💖';
       }
     }
   }
-  toggleParticleShapeGlobal = toggleParticleShape;
 
+  // Nút đổi dáng hạt
   const morphBtn = document.getElementById('morph-toggle');
   if (morphBtn) {
     morphBtn.addEventListener('click', toggleParticleShape);
   }
 
-  // Tự động chuyển đổi sau mỗi 7.5 giây để luôn sinh động
-  let autoMorphInterval = setInterval(toggleParticleShape, 7500);
+  // Nút tung sao hồng / bùng nổ hạt
+  const scatterBtn = document.getElementById('scatter-btn');
+  if (scatterBtn) {
+    scatterBtn.addEventListener('click', () => {
+      particles.forEach(p => {
+        p.vx += (Math.random() - 0.5) * 22;
+        p.vy += (Math.random() - 0.5) * 22;
+      });
+      createHeartBurst(window.innerWidth / 2, window.innerHeight * 0.35, 15);
+    });
+  }
 
-  // Nhịp đập phập phồng của trái tim (heartbeat)
+  // Tự động chuyển đổi sau mỗi 7 giây
+  setInterval(toggleParticleShape, 7000);
+
+  // Hiệu ứng phập phồng (Heartbeat pulse)
   let beatTimer = 0;
 
   function render() {
     ctx.clearRect(0, 0, width, height);
 
-    beatTimer += 0.05;
-    // Nhịp đập kiểu thump-thump
-    const pulseScale = currentTargetMode === 'heart' 
-      ? 1 + Math.pow(Math.sin(beatTimer * 2), 6) * 0.12 + Math.pow(Math.sin(beatTimer * 2 + 0.3), 8) * 0.06
-      : 1 + Math.sin(beatTimer * 1.5) * 0.02;
+    beatTimer += 0.055;
+    const pulseScale = currentTargetMode === 'heart'
+      ? 1 + Math.pow(Math.sin(beatTimer * 2.2), 6) * 0.12 + Math.pow(Math.sin(beatTimer * 2.2 + 0.3), 8) * 0.06
+      : 1 + Math.sin(beatTimer * 1.5) * 0.03;
 
     const cx = width / 2;
-    const cy = height * 0.38;
+    const cy = height * 0.48;
 
     particles.forEach((p) => {
-      // Tính vị trí đích có áp dụng nhịp đập phập phồng
       const dxOrigin = p.targetX - cx;
       const dyOrigin = p.targetY - cy;
       const pulsedTargetX = cx + dxOrigin * pulseScale;
       const pulsedTargetY = cy + dyOrigin * pulseScale;
 
-      // Di chuyển mượt mà về đích (Spring physics)
       const dx = pulsedTargetX - p.x;
       const dy = pulsedTargetY - p.y;
-      p.vx = p.vx * 0.88 + dx * 0.035;
-      p.vy = p.vy * 0.88 + dy * 0.035;
+      p.vx = p.vx * 0.86 + dx * 0.045;
+      p.vy = p.vy * 0.86 + dy * 0.045;
 
-      // Đẩy khi chuột/ngón tay lại gần
+      // Phản hồi với con trỏ chuột / ngón tay
       const distMouseX = p.x - mouse.x;
       const distMouseY = p.y - mouse.y;
       const distMouse = Math.sqrt(distMouseX * distMouseX + distMouseY * distMouseY);
       if (distMouse < mouse.radius) {
-        const force = (1 - distMouse / mouse.radius) * 7;
+        const force = (1 - distMouse / mouse.radius) * 8;
         const angle = Math.atan2(distMouseY, distMouseX);
         p.vx += Math.cos(angle) * force;
         p.vy += Math.sin(angle) * force;
@@ -315,12 +321,12 @@ function initHeartMorphCanvas() {
       p.x += p.vx;
       p.y += p.vy;
 
-      // Vẽ hạt phát sáng
+      // Vẽ hạt sáng
       ctx.save();
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 9;
       ctx.shadowColor = p.color;
       ctx.globalAlpha = p.alpha;
       ctx.fill();
@@ -332,8 +338,6 @@ function initHeartMorphCanvas() {
   render();
 
   window.addEventListener('resize', () => {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
     recomputeTargets();
     const targets = currentTargetMode === 'heart' ? heartTargets : thoaTargets;
     particles.forEach((p, idx) => {
@@ -344,37 +348,67 @@ function initHeartMorphCanvas() {
 }
 
 /* =========================================================================
-   3. HIỆU ỨNG CHUYỂN ĐỘNG & 3D TILT CHO ẢNH THOA
+   3. CÁC HIỆU ỨNG CHUYỂN ĐỘNG & TƯƠNG TÁC CHO ẢNH THOA
    ========================================================================= */
-function initPhoto3DInteraction() {
+function initPhotoInteractions() {
   const wrapper = document.getElementById('cardWrapper');
   const card = document.getElementById('card3d');
-  if (!wrapper || !card) return;
+  const danceBtn = document.getElementById('dance-btn');
+  const heartBurstBtn = document.getElementById('heart-burst-btn');
+  if (!card) return;
 
-  // Hiệu ứng tương tác 3D tilt theo con trỏ chuột
-  wrapper.addEventListener('mousemove', (e) => {
-    const rect = wrapper.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
+  // 1. Tương tác 3D tilt theo con trỏ chuột (trên máy tính)
+  if (wrapper && window.innerWidth >= 768) {
+    wrapper.addEventListener('mousemove', (e) => {
+      const rect = wrapper.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
 
-    const rotX = -(y / (rect.height / 2)) * 14;
-    const rotY = (x / (rect.width / 2)) * 14;
+      const rotX = -(y / (rect.height / 2)) * 12;
+      const rotY = (x / (rect.width / 2)) * 12;
 
-    card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.03, 1.03, 1.03)`;
-  });
+      card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.03, 1.03, 1.03)`;
+    });
 
-  wrapper.addEventListener('mouseleave', () => {
-    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-  });
+    wrapper.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+  }
 
-  // Khi click vào khung ảnh của Thoa: Bắn tim tung tóe!
-  wrapper.addEventListener('click', (e) => {
-    createHeartBurst(e.clientX, e.clientY, 16);
-    // Nháy hiệu ứng viền ảnh
-    card.style.boxShadow = '0 0 60px rgba(255, 107, 157, 0.9)';
+  // 2. Kích hoạt hiệu ứng nhún nhảy dễ thương (Jelly Dance)
+  function triggerDance() {
+    card.classList.remove('dance-active');
+    void card.offsetWidth; // Force reflow
+    card.classList.add('dance-active');
+
+    // Bắn tim và sao xung quanh ảnh
+    const rect = card.getBoundingClientRect();
+    createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 14);
+
     setTimeout(() => {
-      card.style.boxShadow = '';
-    }, 600);
+      card.classList.remove('dance-active');
+    }, 1000);
+  }
+
+  if (danceBtn) {
+    danceBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerDance();
+    });
+  }
+
+  if (heartBurstBtn) {
+    heartBurstBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = card.getBoundingClientRect();
+      createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 3, 20);
+    });
+  }
+
+  // Chạm hoặc nhấp trực tiếp vào ảnh: vừa nhún nhảy vừa bắn tim
+  card.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+    triggerDance();
   });
 }
 
@@ -409,13 +443,12 @@ Cảm ơn Thoa vì đã luôn mang đến nguồn năng lượng dễ thương v
         index++;
       } else {
         clearInterval(timerId);
-        // Sau khi gõ xong, cho phép con trỏ nhấp nháy thêm một lúc
         setTimeout(() => {
           const cursor = container.querySelector('.typewriter-cursor');
           if (cursor) cursor.remove();
         }, 3000);
       }
-    }, 45); // Tốc độ gõ chữ vừa vặn, cảm xúc
+    }, 40);
   }
 
   function escapeHtml(text) {
@@ -425,8 +458,7 @@ Cảm ơn Thoa vì đã luôn mang đến nguồn năng lượng dễ thương v
       .replace(/>/g, '&gt;');
   }
 
-  // Bắt đầu gõ sau một khoảng delay nhẹ để trang web xuất hiện mượt mà
-  setTimeout(startTyping, 800);
+  setTimeout(startTyping, 600);
 
   if (replayBtn) {
     replayBtn.addEventListener('click', () => {
@@ -437,7 +469,7 @@ Cảm ơn Thoa vì đã luôn mang đến nguồn năng lượng dễ thương v
 }
 
 /* =========================================================================
-   5. HIỆU ỨNG TƯƠNG TÁC: BẮN PHÁO HOA TIM & CLICK TẠO TIM
+   5. BẮN PHÁO HOA TIM & TƯƠNG TÁC CHẠM
    ========================================================================= */
 function createHeartBurst(x, y, count = 10) {
   const emojis = ['💖', '💕', '✨', '🌸', '🥮', '🐇', '💗', '⭐'];
@@ -446,7 +478,7 @@ function createHeartBurst(x, y, count = 10) {
     heart.className = 'floating-heart';
     heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
 
-    const xOffset = (Math.random() - 0.5) * 160 + 'px';
+    const xOffset = (Math.random() - 0.5) * 150 + 'px';
     const rot = (Math.random() - 0.5) * 90 + 'deg';
     heart.style.setProperty('--x-offset', xOffset);
     heart.style.setProperty('--rot', rot);
@@ -465,23 +497,21 @@ function createHeartBurst(x, y, count = 10) {
 function initInteractiveBursts() {
   const fireworksBtn = document.getElementById('btn-fireworks');
   if (fireworksBtn) {
-    fireworksBtn.addEventListener('click', (e) => {
-      // Bắn 3 đợt pháo hoa tim liên tiếp
+    fireworksBtn.addEventListener('click', () => {
       for (let i = 0; i < 4; i++) {
         setTimeout(() => {
           const rx = window.innerWidth * (0.2 + Math.random() * 0.6);
-          const ry = window.innerHeight * (0.2 + Math.random() * 0.4);
-          createHeartBurst(rx, ry, 20);
-        }, i * 350);
+          const ry = window.innerHeight * (0.2 + Math.random() * 0.35);
+          createHeartBurst(rx, ry, 18);
+        }, i * 320);
       }
     });
   }
 
-  // Nhấp chuột bất kỳ trên nền cũng thả tim nhẹ nhàng
+  // Nhấp chuột hoặc chạm bất kỳ để thả tim nhẹ
   document.addEventListener('click', (e) => {
-    // Không bắn nếu bấm trúng button
-    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-    createHeartBurst(e.clientX, e.clientY, 5);
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.id === 'heart-canvas') return;
+    createHeartBurst(e.clientX, e.clientY, 4);
   });
 }
 
@@ -495,60 +525,18 @@ function initMusicPlayer() {
 
   let isPlaying = false;
 
-  // Web Audio Synth Melody phòng hờ khi trình duyệt chặn link nhạc online
-  let synthInterval = null;
-  function playSweetTone() {
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-
-      const notes = [261.63, 329.63, 392.00, 523.25, 440.00, 349.23]; // C, E, G, C5, A, F
-      let noteIndex = 0;
-
-      synthInterval = setInterval(() => {
-        if (!isPlaying) {
-          clearInterval(synthInterval);
-          return;
-        }
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(notes[noteIndex % notes.length], ctx.currentTime);
-        gain.gain.setValueAtTime(0.06, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 1.2);
-        noteIndex++;
-      }, 700);
-    } catch (e) {
-      console.log('Audio Context not started yet');
-    }
-  }
-
   musicBtn.addEventListener('click', () => {
     if (!isPlaying) {
       audio.volume = 0.5;
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            isPlaying = true;
-            updateBtnState(true);
-          })
-          .catch(() => {
-            // Nếu nguồn mp3 ngoài bị chặn, chạy giai điệu tự sinh êm ái
-            isPlaying = true;
-            playSweetTone();
-            updateBtnState(true);
-          });
-      }
+      audio.play().then(() => {
+        isPlaying = true;
+        updateBtnState(true);
+      }).catch(() => {
+        isPlaying = true;
+        updateBtnState(true);
+      });
     } else {
       audio.pause();
-      if (synthInterval) clearInterval(synthInterval);
       isPlaying = false;
       updateBtnState(false);
     }
@@ -568,7 +556,7 @@ function initMusicPlayer() {
     }
   }
 
-  // Tự động gợi ý phát nhạc khi người dùng tương tác lần đầu
+  // Tương tác lần đầu để phát nhạc nếu được phép
   const playOnce = () => {
     document.removeEventListener('click', playOnce);
     if (!isPlaying) {
@@ -576,9 +564,7 @@ function initMusicPlayer() {
       audio.play().then(() => {
         isPlaying = true;
         updateBtnState(true);
-      }).catch(() => {
-        // Trình duyệt có thể yêu cầu click đúng nút
-      });
+      }).catch(() => {});
     }
   };
   document.addEventListener('click', playOnce, { once: true });
